@@ -1,5 +1,4 @@
 from enum import Enum
-from dataclasses import dataclass
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -13,6 +12,7 @@ class Settings(BaseSettings):
 
 
 settings = Settings()  # pyright: ignore
+
 
 class InteractionType:
     PING = 1
@@ -45,11 +45,3 @@ class ApplicationCommandOptionType(Enum):
     USER = 6
     CHANNEL = 7
     ROLE = 8
-
-
-@dataclass
-class Option:
-    name: str
-    type: ApplicationCommandOptionType
-    description: str = "..."
-    required: bool = False

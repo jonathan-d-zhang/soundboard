@@ -5,6 +5,7 @@ from soundboard.constants import settings
 
 verifier = VerifyKey(bytes.fromhex(settings.discord_public_key))
 
+
 def verify_key(signature: str, timestamp: str, raw_body: bytes) -> bool:
     body = raw_body.decode(encoding="utf-8")
 

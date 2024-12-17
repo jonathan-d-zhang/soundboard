@@ -4,15 +4,19 @@ from soundboard.verify import verify_key
 
 app = FastAPI()
 
+
 async def set_body(request: Request, body: bytes) -> None:
     async def receive():
         return {"type": "http.request", "body": body}
+
     request._receive = receive
+
 
 async def get_body(request: Request) -> bytes:
     body = await request.body()
     await set_body(request, body)
     return body
+
 
 @app.middleware("http")
 async def verify(request: Request, call_next):
