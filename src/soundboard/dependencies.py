@@ -2,7 +2,7 @@ import httpx
 from soundboard.constants import settings
 
 
-HEADERS = {"Authorization": f"Bearer: {settings.discord_token}"}
+HEADERS = {"Authorization": f"Bot {settings.discord_token}"}
 
 
 def http_client():

@@ -1,11 +1,11 @@
 from contextlib import asynccontextmanager
-import dataclasses
 from typing import Annotated
-from fastapi import Depends, FastAPI, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from httpx import Client
 import httpx
 
-from soundboard.constants import (
+from soundboard.models import (
+    Interaction,
     InteractionResponseFlags,
     InteractionResponseType,
     InteractionType,
@@ -19,14 +19,26 @@ from soundboard.constants import settings
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    with httpx.Client(headers={"Authorization": f"Bearer: {settings.discord_token}"}, base_url=settings.discord_base_url) as client:
-        json = [dataclasses.asdict(command) for command in handler.commands.values()]
+    with httpx.Client(
+        headers={"Authorization": f"Bot {settings.discord_token}"},
+        base_url=settings.discord_base_url,
+    ) as client:
+        json = [
+            {
+                "name": command.name,
+                "description": command.description,
+                "options": command.options,
+            }
+            for command in handler.commands.values()
+        ]
         print(f"Registering: {json}")
         resp = client.put(
             f"/applications/{settings.discord_application_id}/commands",
             json=json,
         )
         print(f"Registration response: {resp.json()}")
+
+    print(handler.commands)
     yield
 
 
@@ -64,23 +76,25 @@ async def verify(request: Request, call_next):
 
 
 @app.post("/")
-async def interaction(request: Request, http: Annotated[Client, Depends(http_client)]):
-    data = await request.json()
+async def interaction(
+        request: Request, http: Annotated[Client, Depends(http_client)]
+):
+    interaction = Interaction.model_validate(await request.json())
+    print(f"{interaction = }")
 
-    if data["type"] == InteractionType.PING:
-        return {"type": InteractionResponseType.PONG}
+    if interaction.type == InteractionType.ping:
+        return {"type": InteractionResponseType.pong}
 
-    if data["type"] == InteractionType.APPLICATION_COMMAND:
-        handler.run(data, http)
+    if interaction.type == InteractionType.application_command:
+        if interaction.data is None:
+            raise HTTPException(400)
+        resp = handler.run(interaction, http)
+        if resp is not None:
+            return resp
 
     return dict(
-        type=InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        type=InteractionResponseType.channel_message_with_source,
         data=dict(
-            content="Unrecognized Interaction", flags=InteractionResponseFlags.EPHEMERAL
+            content="Unrecognized Interaction", flags=InteractionResponseFlags.ephemeral
         ),
     )
-
-
-@app.get("/ping")
-async def ping() -> str:
-    return "pong"
