@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     discord_public_key: str
     discord_token: str
     discord_base_url: str = "https://discord.com/api/v10"
+    discord_guild_id: str
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="soundboard_")
 

@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
-from httpx import Client
+from httpx import AsyncClient
 import httpx
 
 from soundboard.models import (
@@ -19,7 +19,7 @@ from soundboard.constants import settings
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    with httpx.Client(
+    async with httpx.AsyncClient(
         headers={"Authorization": f"Bot {settings.discord_token}"},
         base_url=settings.discord_base_url,
     ) as client:
@@ -28,17 +28,17 @@ async def lifespan(_: FastAPI):
                 "name": command.name,
                 "description": command.description,
                 "options": command.options,
+                "type": command.type,
             }
             for command in handler.commands.values()
         ]
         print(f"Registering: {json}")
-        resp = client.put(
-            f"/applications/{settings.discord_application_id}/commands",
+        resp = await client.put(
+            f"/applications/{settings.discord_application_id}/guilds/{settings.discord_guild_id}/commands",
             json=json,
         )
         print(f"Registration response: {resp.json()}")
 
-    print(handler.commands)
     yield
 
 
@@ -77,9 +77,11 @@ async def verify(request: Request, call_next):
 
 @app.post("/")
 async def interaction(
-        request: Request, http: Annotated[Client, Depends(http_client)]
+    request: Request, http: Annotated[AsyncClient, Depends(http_client)]
 ):
-    interaction = Interaction.model_validate(await request.json())
+    json = await request.json()
+    print(json)
+    interaction = Interaction.model_validate(json)
     print(f"{interaction = }")
 
     if interaction.type == InteractionType.ping:
@@ -88,7 +90,7 @@ async def interaction(
     if interaction.type == InteractionType.application_command:
         if interaction.data is None:
             raise HTTPException(400)
-        resp = handler.run(interaction, http)
+        resp = await handler.run(interaction, http)
         if resp is not None:
             return resp
 
