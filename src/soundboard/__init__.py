@@ -11,6 +11,7 @@ from soundboard.dependencies import http_client
 from soundboard.handler import handler
 from soundboard.verify import verify_key
 
+
 app = FastAPI()
 
 
