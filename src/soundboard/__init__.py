@@ -1,5 +1,12 @@
-from fastapi import FastAPI, HTTPException, Request
+from typing import Annotated
+from fastapi import Depends, FastAPI, HTTPException, Request
 
+from soundboard.constants import (
+    InteractionResponseFlags,
+    InteractionResponseType,
+    InteractionType,
+)
+from soundboard.handler import handler
 from soundboard.verify import verify_key
 
 app = FastAPI()
@@ -33,3 +40,21 @@ async def verify(request: Request, call_next):
 
     response = await call_next(request)
     return response
+
+
+@app.post("/")
+async def interaction(request: Request):
+    data = await request.json()
+
+    if data["type"] == InteractionType.PING:
+        return {"type": InteractionResponseType.PONG}
+
+    if data["type"] == InteractionType.APPLICATION_COMMAND:
+        handler.run(data)
+
+    return dict(
+        type=InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data=dict(
+            content="Unrecognized Interaction", flags=InteractionResponseFlags.EPHEMERAL
+        ),
+    )
