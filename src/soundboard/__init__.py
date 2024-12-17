@@ -1,11 +1,13 @@
 from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Request
+from httpx import Client
 
 from soundboard.constants import (
     InteractionResponseFlags,
     InteractionResponseType,
     InteractionType,
 )
+from soundboard.dependencies import http_client
 from soundboard.handler import handler
 from soundboard.verify import verify_key
 
@@ -43,14 +45,14 @@ async def verify(request: Request, call_next):
 
 
 @app.post("/")
-async def interaction(request: Request):
+async def interaction(request: Request, http: Annotated[Client, Depends(http_client)]):
     data = await request.json()
 
     if data["type"] == InteractionType.PING:
         return {"type": InteractionResponseType.PONG}
 
     if data["type"] == InteractionType.APPLICATION_COMMAND:
-        handler.run(data)
+        handler.run(data, http)
 
     return dict(
         type=InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,

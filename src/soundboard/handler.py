@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Callable
 from dataclasses import dataclass
 
+from httpx import Client
+
 from soundboard.constants import ApplicationCommandOptionType
 
 
@@ -32,14 +34,14 @@ class CommandHandler:
         self.commands[name] = Command(name, description, options, func)
         return func
 
-    def run(self, data: dict):
+    def run(self, data: dict, http: Client):
         name = data["data"]["name"]
         func = self.commands.get(name)
 
         if func is None:
             raise ValueError(f"Invalid command: {name}")
 
-        return func
+        return func.func(data, http)
 
 
 handler = CommandHandler()
