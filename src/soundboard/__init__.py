@@ -1,6 +1,9 @@
+from contextlib import asynccontextmanager
+import dataclasses
 from typing import Annotated
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, Request, Response
 from httpx import Client
+import httpx
 
 from soundboard.constants import (
     InteractionResponseFlags,
@@ -11,8 +14,23 @@ from soundboard.dependencies import http_client
 from soundboard.handler import handler
 from soundboard.verify import verify_key
 
+from soundboard.constants import settings
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    with httpx.Client(headers={"Authorization": f"Bearer: {settings.discord_token}"}, base_url=settings.discord_base_url) as client:
+        json = [dataclasses.asdict(command) for command in handler.commands.values()]
+        print(f"Registering: {json}")
+        resp = client.put(
+            f"/applications/{settings.discord_application_id}/commands",
+            json=json,
+        )
+        print(f"Registration response: {resp.json()}")
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 async def set_body(request: Request, body: bytes) -> None:
@@ -36,10 +54,10 @@ async def verify(request: Request, call_next):
     body = await get_body(request)
 
     if signature is None or timestamp is None:
-        raise HTTPException(401)
+        return Response(status_code=401)
 
     if not verify_key(signature, timestamp, body):
-        raise HTTPException(401)
+        return Response(status_code=401)
 
     response = await call_next(request)
     return response
@@ -61,3 +79,8 @@ async def interaction(request: Request, http: Annotated[Client, Depends(http_cli
             content="Unrecognized Interaction", flags=InteractionResponseFlags.EPHEMERAL
         ),
     )
+
+
+@app.get("/ping")
+async def ping() -> str:
+    return "pong"
