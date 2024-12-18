@@ -10,9 +10,9 @@ from soundboard.dependencies import http_client
 from soundboard.handler import handler
 from soundboard.models import (
     Interaction,
-    InteractionResponseFlags,
     InteractionResponseType,
     InteractionType,
+    MessageResponseFlags,
 )
 from soundboard.verify import verify_key
 
@@ -94,5 +94,5 @@ async def interaction(request: Request, http: Annotated[AsyncClient, Depends(htt
 
     return dict(
         type=InteractionResponseType.channel_message_with_source,
-        data=dict(content="Unrecognized Interaction", flags=InteractionResponseFlags.ephemeral),
+        data=dict(content="Unrecognized Interaction", flags=MessageResponseFlags.ephemeral),
     )

@@ -9,8 +9,8 @@ from soundboard.models import (
     ApplicationCommandOptionType,
     ApplicationCommandType,
     Interaction,
-    InteractionResponseFlags,
     InteractionResponseType,
+    MessageResponseFlags,
 )
 
 
@@ -76,7 +76,7 @@ async def hello(interaction: Interaction, _: AsyncClient):
         "type": InteractionResponseType.channel_message_with_source,
         "data": {
             "content": f"Hello <@!{user_id}>",
-            "flags": InteractionResponseFlags.ephemeral,
+            "flags": MessageResponseFlags.ephemeral,
         },
     }
 
@@ -92,5 +92,5 @@ async def list_sounds(interaction: Interaction, http: AsyncClient):
 
     return {
         "type": InteractionResponseType.channel_message_with_source,
-        "data": {"content": "e", "flags": InteractionResponseFlags.ephemeral},
+        "data": {"content": "e", "flags": MessageResponseFlags.ephemeral},
     }
