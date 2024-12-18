@@ -1,20 +1,20 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
+
+import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from httpx import AsyncClient
-import httpx
 
+from soundboard.constants import settings
+from soundboard.dependencies import http_client
+from soundboard.handler import handler
 from soundboard.models import (
     Interaction,
     InteractionResponseFlags,
     InteractionResponseType,
     InteractionType,
 )
-from soundboard.dependencies import http_client
-from soundboard.handler import handler
 from soundboard.verify import verify_key
-
-from soundboard.constants import settings
 
 
 @asynccontextmanager
@@ -76,9 +76,7 @@ async def verify(request: Request, call_next):
 
 
 @app.post("/")
-async def interaction(
-    request: Request, http: Annotated[AsyncClient, Depends(http_client)]
-):
+async def interaction(request: Request, http: Annotated[AsyncClient, Depends(http_client)]):
     json = await request.json()
     print(json)
     interaction = Interaction.model_validate(json)
@@ -96,7 +94,5 @@ async def interaction(
 
     return dict(
         type=InteractionResponseType.channel_message_with_source,
-        data=dict(
-            content="Unrecognized Interaction", flags=InteractionResponseFlags.ephemeral
-        ),
+        data=dict(content="Unrecognized Interaction", flags=InteractionResponseFlags.ephemeral),
     )

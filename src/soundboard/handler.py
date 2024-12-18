@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from httpx import AsyncClient
 
-from soundboard.constants import settings
 from soundboard.models import (
     ApplicationCommandOptionType,
     ApplicationCommandType,
@@ -41,23 +40,16 @@ class CommandHandler:
         name: str,
         description: str,
         application_command_type: ApplicationCommandType = ApplicationCommandType.chat_input,
-        options: Optional[list[Option]] = None,
+        options: list[Option] | None = None,
     ):
         if options is None:
             options = []
 
-        if (
-            application_command_type is ApplicationCommandType.message
-            and description != ""
-        ):
-            raise ValueError(
-                "description argument must be empty when creating Message Commands"
-            )
+        if application_command_type is ApplicationCommandType.message and description != "":
+            raise ValueError("description argument must be empty when creating Message Commands")
 
         def inner(func):
-            self.commands[name] = Command(
-                name, description, application_command_type, options, func
-            )
+            self.commands[name] = Command(name, description, application_command_type, options, func)
             return func
 
         return inner
@@ -92,10 +84,9 @@ async def hello(interaction: Interaction, _: AsyncClient):
 @handler.register("sounds", "List sounds")
 async def list_sounds(interaction: Interaction, http: AsyncClient):
     """List sounds available for play immediately."""
-
     r = await http.get(f"/guilds/{interaction.guild_id}/soundboard-sounds")
     headers = r.headers.items()
-    print({k : v for k, v in headers if "x-ratelimit" in k})
+    print({k: v for k, v in headers if "x-ratelimit" in k})
     data = r.json()
     print(data)
 

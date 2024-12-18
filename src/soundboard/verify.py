@@ -1,5 +1,5 @@
-from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
+from nacl.signing import VerifyKey
 
 from soundboard.constants import settings
 
