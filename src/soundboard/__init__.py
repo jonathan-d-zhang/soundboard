@@ -1,3 +1,4 @@
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -18,7 +19,12 @@ from soundboard.verify import verify_key
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
+    """
+    Lifespan function.
+
+    Upserts application commands.
+    """
     async with httpx.AsyncClient(
         headers={"Authorization": f"Bot {settings.discord_token}"},
         base_url=settings.discord_base_url,
@@ -45,25 +51,30 @@ async def lifespan(_: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-async def set_body(request: Request, body: bytes) -> None:
-    async def receive():
+async def _set_body(request: Request, body: bytes) -> None:
+    async def receive() -> dict:
         return {"type": "http.request", "body": body}
 
     request._receive = receive
 
 
-async def get_body(request: Request) -> bytes:
+async def _get_body(request: Request) -> bytes:
     body = await request.body()
-    await set_body(request, body)
+    await _set_body(request, body)
     return body
 
 
 @app.middleware("http")
-async def verify(request: Request, call_next):
+async def verify(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    """
+    Validates security request headers.
+
+    https://discord.com/developers/docs/interactions/overview#setting-up-an-endpoint-validating-security-request-headers
+    """
     signature = request.headers.get("X-Signature-Ed25519")
     timestamp = request.headers.get("X-Signature-Timestamp")
 
-    body = await get_body(request)
+    body = await _get_body(request)
 
     if signature is None or timestamp is None:
         return Response(status_code=401)
@@ -76,7 +87,8 @@ async def verify(request: Request, call_next):
 
 
 @app.post("/")
-async def interaction(request: Request, http: Annotated[AsyncClient, Depends(http_client)]):
+async def interaction(request: Request, http: Annotated[AsyncClient, Depends(http_client)]) -> dict:
+    """Entrypoint for interaction requests."""
     json = await request.json()
     print(json)
     interaction = Interaction.model_validate(json)

@@ -2,6 +2,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """App config."""
+
     discord_application_id: str
     discord_public_key: str
     discord_token: str
@@ -11,4 +13,4 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="soundboard_")
 
 
-settings = Settings()  # pyright: ignore
+settings = Settings()  # pyright: ignore[reportCallIssue]
