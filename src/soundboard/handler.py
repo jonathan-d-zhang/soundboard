@@ -105,12 +105,9 @@ async def hello(interaction: Interaction, _: AsyncClient) -> dict:
 async def list_sounds(interaction: Interaction, http: AsyncClient) -> dict:
     """List sounds available for play immediately."""
     r = await http.get(f"/guilds/{interaction.guild_id}/soundboard-sounds")
-    headers = r.headers.items()
-    print({k: v for k, v in headers if "x-ratelimit" in k})
     data = r.json()
-    print(data)
 
     return {
         "type": InteractionResponseType.channel_message_with_source,
-        "data": {"content": "e", "flags": MessageResponseFlags.ephemeral},
+        "data": {"content": f"```\n{data}\n```", "flags": MessageResponseFlags.ephemeral},
     }

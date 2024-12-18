@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Annotated
@@ -16,6 +17,10 @@ from soundboard.models import (
     MessageResponseFlags,
 )
 from soundboard.verify import verify_key
+
+logging.basicConfig(level=settings.log_level)
+
+logger = logging.getLogger(__file__)
 
 
 @asynccontextmanager
@@ -38,12 +43,13 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
             }
             for command in handler.commands.values()
         ]
-        print(f"Registering: {json}")
+        logger.info(f"Registering: {[command.name for command in handler.commands.values()]}")
+        logger.debug(f"Registering: {json}")
         resp = await client.put(
             f"/applications/{settings.discord_application_id}/guilds/{settings.discord_guild_id}/commands",
             json=json,
         )
-        print(f"Registration response: {resp.json()}")
+        logger.debug(f"Registration response: {resp.json()}")
 
     yield
 
@@ -90,9 +96,9 @@ async def verify(request: Request, call_next: Callable[[Request], Awaitable[Resp
 async def interaction(request: Request, http: Annotated[AsyncClient, Depends(http_client)]) -> dict:
     """Entrypoint for interaction requests."""
     json = await request.json()
-    print(json)
+    logger.debug(f"Interaction body: {json}")
     interaction = Interaction.model_validate(json)
-    print(f"{interaction = }")
+    logger.debug(f"Deserialized interaction model: {interaction}")
 
     if interaction.type == InteractionType.ping:
         return {"type": InteractionResponseType.pong}
