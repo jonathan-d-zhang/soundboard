@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     log_level: str = "INFO"
 
-    model_config = SettingsConfigDict(env_file=".env", env_prefix="soundboard_")
+    model_config = SettingsConfigDict(env_file=".env", env_prefix="soundboard_", extra="ignore")
 
 
 settings = Settings()  # pyright: ignore[reportCallIssue]
