@@ -19,4 +19,4 @@ COPY --from=builder --chown=app:app /app /app
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD ["fastapi", "run", "/app/src/soundboard"]
+CMD ["python", "/app/src/soundboard/__init__.py"]

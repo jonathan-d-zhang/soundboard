@@ -2,22 +2,4 @@
 services:
   soundboard:
     build: .
-    ports:
-      - "127.0.0.1:8000:8000"
     env_file: .env
-    develop:
-      watch:
-        - action: sync
-          path: .
-          target: /app
-          ignore:
-            - .venv/
-
-        - action: rebuild
-          path: ./pyproject.toml
-
-  tunnel:
-    image: cloudflare/cloudflared
-    command: tunnel run
-    environment:
-      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
