@@ -3,3 +3,8 @@ services:
   soundboard:
     build: .
     env_file: .env
+    volumes:
+      - sounds:/var/soundboard/sounds
+
+volumes:
+  sounds:

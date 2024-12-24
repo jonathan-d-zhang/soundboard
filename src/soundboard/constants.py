@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     discord_base_url: str = "https://discord.com/api/v10"
     discord_guild_id: str
 
+    sound_max_size: int = 1 << 17  # 128 KiB
+    sound_location: str = "/var/soundboard/sounds"
+
     log_level: str = "INFO"
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="soundboard_", extra="ignore")
