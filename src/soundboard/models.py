@@ -6,7 +6,7 @@ from pydantic import BaseModel
 class Sound(BaseModel):
     """Represents a sound."""
 
-    id: str
+    id: int
     custom_id: str
     filename: str
     size: int
