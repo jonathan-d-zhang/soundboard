@@ -2,6 +2,7 @@ import asyncio
 import logging
 from pathlib import Path
 
+import aiosqlite
 import discord
 import httpx
 from discord.ext import commands
@@ -12,12 +13,16 @@ discord.utils.setup_logging(level=logging.getLevelNamesMapping()[settings.log_le
 logger = logging.getLogger(__file__)
 
 
+SQL_SETUP_SCRIPT = Path("./setup.sql").read_text()
+
+
 class SoundBoard(commands.Cog):
     """Soundboard cog."""
 
-    def __init__(self, bot: commands.Bot) -> None:
+    def __init__(self, bot: commands.Bot, db: aiosqlite.Connection) -> None:
         self.bot = bot
         self.client = httpx.AsyncClient()
+        self.db = db
 
     @commands.command()
     async def ping(self, ctx: commands.Context) -> None:
@@ -50,10 +55,21 @@ intents.message_content = True
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"), intents=intents)
 
 
+async def _db_setup(path: str | Path) -> aiosqlite.Connection:
+    db = aiosqlite.connect(path)
+
+    async with db.executescript(SQL_SETUP_SCRIPT) as _:
+        pass
+
+    return db
+
+
 async def main() -> None:
     """Main function."""
+    db = await _db_setup(settings.sound_metadata_db_location)
+
     async with bot:
-        await bot.add_cog(SoundBoard(bot))
+        await bot.add_cog(SoundBoard(bot, db))
         await bot.start(settings.discord_token)
 
 

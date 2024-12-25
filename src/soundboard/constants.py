@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     discord_guild_id: str
 
     sound_max_size: int = 1 << 17  # 128 KiB
+
+    sound_metadata_db_location: str = "/var/soundboard/metadata.db"
     sound_location: str = "/var/soundboard/sounds"
 
     log_level: str = "INFO"
