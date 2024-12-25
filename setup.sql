@@ -1,3 +1,5 @@
+PRAGMA journal_mode = WAL;
+
 CREATE TABLE IF NOT EXISTS sound (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     custom_id TEXT NOT NULL,

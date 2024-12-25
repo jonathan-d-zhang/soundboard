@@ -29,6 +29,16 @@ class SoundBoard(commands.Cog):
         """Ping command for testing."""
         await ctx.send("pong")
 
+    async def _save_sound(self, attachment: discord.Attachment, added_by: int) -> None:
+        """Persist sound and sound metadata."""
+        # need to set custom_id in order to make persistent views. just use the filename
+        await attachment.save(Path(settings.sound_location) / attachment.filename)
+        async with self.db.execute(
+            "INSERT INTO sounds (custom_id, filename, size, added_by) VALUES (?, ?, ?, ?)",
+            [attachment.filename, attachment.filename, attachment.size, str(added_by)],
+        ):
+            pass
+
     @commands.command()
     async def add(self, ctx: commands.Context) -> None:
         """Add sounds to the soundboard."""
@@ -43,7 +53,8 @@ class SoundBoard(commands.Cog):
                 if attachment.size > settings.sound_max_size:
                     embed.add_field(name=attachment.filename, value=f"Skipping: too large ({attachment.size}).")
                     continue
-                await attachment.save(Path(settings.sound_location) / attachment.filename)
+
+                await self._save_sound(attachment, ctx.author.id)
                 embed.add_field(name=attachment.filename, value="Added successfully.")
 
         await ctx.send(embed=embed)

@@ -4,7 +4,7 @@ services:
     build: .
     env_file: .env
     volumes:
-      - sounds:/var/soundboard/sounds
+      - soundboard:/var/soundboard
 
 volumes:
-  sounds:
+  soundboard:
