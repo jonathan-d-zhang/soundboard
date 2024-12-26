@@ -1,4 +1,4 @@
-FROM python:3.12.6-slim-bullseye@sha256:6fe70237cff8ad7c0a91b992cb7cb454187dfd2e3f08ce2d023907d76db8c287 AS builder
+FROM python:3.12.7-slim-bookworm@sha256:60d9996b6a8a3689d36db740b49f4327be3be09a21122bd02fb8895abb38b50d AS builder
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -13,7 +13,7 @@ ADD . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
-FROM python:3.12.6-slim-bullseye@sha256:6fe70237cff8ad7c0a91b992cb7cb454187dfd2e3f08ce2d023907d76db8c287 AS prod
+FROM python:3.12.7-slim-bookworm@sha256:60d9996b6a8a3689d36db740b49f4327be3be09a21122bd02fb8895abb38b50d AS prod
 
 COPY --from=builder --chown=app:app /app /app
 
