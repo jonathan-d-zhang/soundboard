@@ -1,10 +1,13 @@
+import logging
 from collections.abc import Sequence
 
-from discord import ButtonStyle, Interaction, Member
+from discord import ButtonStyle, FFmpegPCMAudio, Interaction, Member, PCMVolumeTransformer, VoiceClient
 from discord.ui import Button, View
 
-from soundboard.constants import MAX_BUTTONS_PER_MESSAGE
+from soundboard.constants import DATA_DIR, MAX_BUTTONS_PER_MESSAGE
 from soundboard.models import Sound
+
+logger = logging.getLogger(__file__)
 
 
 class PlayView(View):
@@ -21,7 +24,7 @@ class PlayView(View):
 
     async def interaction_check(self, interaction: Interaction) -> bool:
         """Check that the user is connected to a voice channel in the same server."""
-        if isinstance(interaction.user, Member) and interaction.user.voice:
+        if isinstance(interaction.user, Member) and interaction.user.voice is not None:
             voice_state = interaction.user.voice
             assert voice_state.channel is not None
 
@@ -40,7 +43,7 @@ class PlayView(View):
 
     def is_full(self) -> bool:
         """Check if the view is full."""
-        return len(self.children) < 25
+        return len(self.children) < MAX_BUTTONS_PER_MESSAGE
 
 
 class PlayButton(Button):
@@ -52,3 +55,27 @@ class PlayButton(Button):
 
     async def callback(self, interaction: Interaction) -> None:
         """Play a sound."""
+        # because of `PlayView.interaction_check`, we know the user is
+        # connected to a voice channel
+
+        logger.debug(f"Playing {self.sound.filename} requested by {interaction.user.name}.")
+
+        assert (
+            isinstance(interaction.user, Member)
+            and interaction.user.voice is not None
+            and interaction.user.voice.channel is not None
+        )
+        assert interaction.guild is not None
+
+        if interaction.guild.voice_client is None:
+            logger.debug("Not connected to voice channel: connecting.")
+            voice_client = await interaction.user.voice.channel.connect()
+        else:
+            logger.debug("Already connected to voice channel.")
+            voice_client = interaction.guild.voice_client
+            assert isinstance(voice_client, VoiceClient)
+
+        audio_source = PCMVolumeTransformer(FFmpegPCMAudio(str(DATA_DIR / "sounds" / self.sound.filename)))
+        voice_client.play(audio_source, after=lambda e: logger.error(f"Player error: {e}") if e else None)
+
+        await interaction.response.edit_message()

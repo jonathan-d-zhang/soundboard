@@ -9,16 +9,14 @@ import discord
 import httpx
 from discord.ext import commands
 
-from soundboard.constants import MAX_BUTTONS_PER_MESSAGE, settings
+from soundboard.constants import DATA_DIR, MAX_BUTTONS_PER_MESSAGE, settings
 from soundboard.models import Sound
 from soundboard.play_button import PlayView
 
 discord.utils.setup_logging(level=logging.getLevelNamesMapping()[settings.log_level])
 logger = logging.getLogger(__file__)
 
-
 SQL_SETUP_SCRIPT = Path("./setup.sql").read_text()
-DATA_DIR = Path(settings.sound_data_dir)
 
 
 class SoundBoard(commands.Cog):
@@ -79,6 +77,10 @@ class SoundBoard(commands.Cog):
         await self.db.execute(query, (message_id, *sound_ids))
         await self.db.commit()
 
+    def _register_views(self) -> None:
+        for msg_id, view in self.messages.items():
+            self.bot.add_view(view, message_id=msg_id)
+
     @commands.Cog.listener("on_ready")
     async def send_startup_messages(self) -> None:
         """Send messages on startup with buttons to trigger sounds."""
@@ -86,14 +88,21 @@ class SoundBoard(commands.Cog):
 
         sounds = await self._load_metadata()
 
+        # reconstruct existing `PlayView`s
+        for message_id, group in itertools.groupby(sounds, key=lambda sound: sound.message_id):
+            if message_id is not None:
+                self.messages[int(message_id)] = PlayView(list(group))
+
         if len(sounds) == 0:
-            logger.debug("No sounds: skipping.")
+            logger.debug("No sounds: skipping sending messages.")
         elif len(to_send := [sound for sound in sounds if sound.message_id is None]) > 0:
             # send new messages
             logger.debug(f"Sending play buttons for {to_send}.")
             await self.create_button_messages(to_send)
         else:
-            logger.debug("Messages already present: skipping.")
+            logger.debug("Messages already present: skipping sending messages.")
+
+        self._register_views()
 
         logger.info("Startup finished.")
 
@@ -113,7 +122,13 @@ class SoundBoard(commands.Cog):
             row = await cursor.fetchone()
             assert row is not None
             id = row["id"]
-            return Sound(id=id, custom_id=attachment.filename, filename=attachment.filename, size=attachment.size, added_by = str(added_by))
+            return Sound(
+                id=id,
+                custom_id=attachment.filename,
+                filename=attachment.filename,
+                size=attachment.size,
+                added_by=str(added_by),
+            )
 
     @commands.command()
     async def add(self, ctx: commands.Context) -> None:
@@ -140,12 +155,6 @@ class SoundBoard(commands.Cog):
         await ctx.send(embed=embed)
 
 
-intents = discord.Intents.default()
-intents.message_content = True
-
-bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"), intents=intents)
-
-
 async def _db_setup(path: str | Path) -> aiosqlite.Connection:
     # I would like to have autocommit=False here, but I can't set the
     # journal_mode from within a transaction. just set it later
@@ -164,6 +173,12 @@ async def _db_setup(path: str | Path) -> aiosqlite.Connection:
 async def main() -> None:
     """Main function."""
     db = await _db_setup(DATA_DIR / "metadata.db")
+
+    intents = discord.Intents.default()
+    intents.message_content = True
+    intents.voice_states = True
+
+    bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"), intents=intents)
 
     sounds_dir = DATA_DIR / "sounds"
     sounds_dir.mkdir(exist_ok=True)

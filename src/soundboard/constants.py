@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,3 +22,5 @@ class Settings(BaseSettings):
 
 MAX_BUTTONS_PER_MESSAGE = 25
 settings = Settings()  # pyright: ignore[reportCallIssue]
+
+DATA_DIR = Path(settings.sound_data_dir)
