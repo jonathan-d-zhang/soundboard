@@ -1,8 +1,6 @@
 # Soundboard
 
-Discord Bot to get around soundboard limits. Goal is to use the Discord API to
-dynamically swap sounds in and out to have the perception of more soundboard
-slots than the server has available.
+Discord Bot to get around soundboard limits.
 
 ## Dev
 
