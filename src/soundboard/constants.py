@@ -18,4 +18,5 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="soundboard_", extra="ignore")
 
 
+MAX_BUTTONS_PER_MESSAGE = 25
 settings = Settings()  # pyright: ignore[reportCallIssue]

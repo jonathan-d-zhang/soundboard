@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from discord import ButtonStyle, Interaction, Member
 from discord.ui import Button, View
 
+from soundboard.constants import MAX_BUTTONS_PER_MESSAGE
 from soundboard.models import Sound
 
 
@@ -12,7 +13,7 @@ class PlayView(View):
     def __init__(self, sounds: Sequence[Sound]):
         super().__init__(timeout=None)
 
-        if len(sounds) > 25:
+        if len(sounds) > MAX_BUTTONS_PER_MESSAGE:
             raise ValueError(f"Can have at most 25 sounds ({len(sounds)} given).")
 
         for sound in sounds:
@@ -32,6 +33,14 @@ class PlayView(View):
         )
 
         return False
+
+    def add_sound(self, sound: Sound) -> None:
+        """Helper method to add a sound."""
+        self.add_item(PlayButton(sound))
+
+    def is_full(self) -> bool:
+        """Check if the view is full."""
+        return len(self.children) < 25
 
 
 class PlayButton(Button):

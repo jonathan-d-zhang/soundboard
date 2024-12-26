@@ -9,4 +9,4 @@ CREATE TABLE IF NOT EXISTS sound (
     message_id TEXT
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_sounds_filename ON sound (filename);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_sound_filename ON sound (filename);
